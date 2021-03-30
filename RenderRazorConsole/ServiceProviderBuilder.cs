@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Reflection;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using RenderRazorConsole;
@@ -35,19 +34,23 @@ namespace Microsoft.Extensions.DependencyInjection
 
         public static IServiceCollection AddRazor(this IServiceCollection services)
         {
-            var hostingEnvironment = new HostingEnvironment
+            var hostingEnvironment = new CustomWebHostEnvironment
             {
                 ApplicationName = Assembly.GetEntryAssembly()?.GetName().Name
             };
 
-            services.AddSingleton<IHostingEnvironment>(hostingEnvironment);
-            services.AddSingleton<DiagnosticSource>((IServiceProvider serviceProvider) => new DiagnosticListener("DummySource"));
+            services.AddSingleton<IWebHostEnvironment>(hostingEnvironment);
+
+            var diagnosticListener = new DiagnosticListener(hostingEnvironment.ApplicationName);
+            services.AddSingleton<DiagnosticSource>(diagnosticListener);
+            services.AddSingleton<DiagnosticListener>(diagnosticListener);
             services.AddTransient<ObjectPoolProvider, DefaultObjectPoolProvider>();
 
             services.AddMvcCore()
-                    .AddRazorViewEngine(options =>
+                .AddRazorViewEngine()
+                    .AddRazorRuntimeCompilation(options =>
                     {
-                        options.AllowRecompilingViewsOnFileChange = false;
+                        options.FileProviders.Clear();
                         options.FileProviders.Add(new VirtualFileProvider());
                     });
 
