@@ -27,7 +27,7 @@ namespace RenderRazorConsole
 
         public IChangeToken Watch(string filter)
         {
-            throw new NotImplementedException();
+            return NullChangeToken.Singleton;
         }
     }
 }
